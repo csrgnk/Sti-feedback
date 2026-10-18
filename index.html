@@ -1,0 +1,1071 @@
+```html
+<!DOCTYPE html>
+<html lang="te">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tulasi Industries - Dispatch & Stock Delivery Feedback System</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tiro+Telugu:ital@0;1&display=swap');
+    
+    body {
+      font-family: 'Inter', 'Tiro Telugu', sans-serif;
+    }
+
+    /* Print Specific Styles - ONLY prints the replica feedback slip */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #printAreaContainer, #printAreaContainer * {
+        visibility: visible !important;
+      }
+      #printAreaContainer {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 10mm !important;
+        background: #ffffff !important;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 8mm;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    /* Checkbox box simulation for print sheet */
+    .print-box-check {
+      display: inline-block;
+      width: 15px;
+      height: 15px;
+      border: 1.5px solid #222;
+      margin-right: 6px;
+      vertical-align: middle;
+      background: #fff;
+    }
+
+    .dotted-line {
+      border-bottom: 1.5px dotted #555;
+      flex-grow: 1;
+      height: 18px;
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 antialiased flex flex-col justify-between">
+
+  <!-- ==================== 1. PIN LOGIN SCREEN ==================== -->
+  <div id="pinScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+      <div class="bg-gradient-to-r from-blue-700 to-indigo-800 p-6 text-center text-white">
+        <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/20">
+          <i class="fa-solid fa-truck-ramp-box text-3xl text-amber-300"></i>
+        </div>
+        <h1 class="text-2xl font-black tracking-wide uppercase">TULASI INDUSTRIES</h1>
+        <p class="text-xs text-blue-200 mt-1 font-medium tracking-wider">STOCK DISPATCH & DELIVERY FEEDBACK SYSTEM</p>
+      </div>
+
+      <div class="p-6">
+        <div class="text-center mb-6">
+          <h2 class="text-lg font-bold text-slate-800">సిబ్బంది లాగిన్ (Staff Authentication)</h2>
+          <p class="text-xs text-slate-500 mt-1">దయచేసి సిస్టమ్ ఓపెన్ చేయడానికి 6-అంకెల సెక్యూరిటీ పిన్ ఎంటర్ చేయండి</p>
+        </div>
+
+        <div class="mb-5">
+          <label class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wider text-center">Enter 6-Digit PIN</label>
+          <div class="relative flex justify-center">
+            <input type="password" id="inputPin" maxlength="6" inputmode="numeric" 
+                   class="w-56 text-center text-3xl font-mono tracking-[0.5em] py-2.5 px-4 bg-slate-50 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:bg-white focus:outline-none transition-all"
+                   placeholder="••••••" autofocus onkeyup="if(event.key === 'Enter') handlePinLogin()">
+          </div>
+          <p id="loginError" class="text-red-500 text-xs font-medium text-center mt-2 hidden">
+            <i class="fa-solid fa-circle-exclamation mr-1"></i> తప్పుడు పిన్! దయచేసి సరైన 6 అంకెల పిన్ నమోదు చేయండి.
+          </p>
+        </div>
+
+        <button onclick="handlePinLogin()" 
+                class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Verify & Login</span>
+        </button>
+
+        <div class="mt-4 text-center">
+          <span class="text-[11px] bg-slate-100 text-slate-500 px-3 py-1 rounded-full border border-slate-200">
+            Default Test PIN: <strong class="text-slate-700">123456</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 2. MAIN HEADER & APP INTERFACE ==================== -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 bg-blue-700 text-white rounded-xl flex items-center justify-center font-black shadow-sm text-xl">
+          TI
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg text-slate-800 leading-tight">TULASI INDUSTRIES</h1>
+          <p class="text-xs font-medium text-slate-500">Dispatch, Unique SL No & Party Feedback Management</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          System Active
+        </span>
+        <button onclick="lockSystem()" class="text-xs bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 font-medium py-1.5 px-3 rounded-lg border border-slate-200 transition-colors flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Logout (లాక్)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-6xl mx-auto px-4 pt-1 flex gap-2 border-t border-slate-100">
+      <button onclick="switchTab('tabDispatch')" id="tabBtnDispatch" 
+              class="tab-btn px-4 py-2.5 font-semibold text-xs sm:text-sm border-b-2 border-blue-700 text-blue-700 flex items-center gap-2 transition-all">
+        <i class="fa-solid fa-file-circle-plus"></i>
+        <span>1. Dispatch & Print Paper (లోడింగ్ & పేపర్ ప్రింట్)</span>
+      </button>
+
+      <button onclick="switchTab('tabFeedback')" id="tabBtnFeedback" 
+              class="tab-btn px-4 py-2.5 font-semibold text-xs sm:text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition-all">
+        <i class="fa-solid fa-clipboard-check"></i>
+        <span>2. Close Paper Feedback (SL No ఫీడ్‌బ్యాక్ నమోదు)</span>
+      </button>
+
+      <button onclick="switchTab('tabHistory')" id="tabBtnHistory" 
+              class="tab-btn px-4 py-2.5 font-semibold text-xs sm:text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition-all">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>3. Records History (రికార్డులు & ఎగుమతి)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <main class="max-w-6xl mx-auto w-full p-4 flex-grow no-print">
+
+    <!-- ---------------- TAB 1: DISPATCH & PRINT SLIP ---------------- -->
+    <section id="tabDispatch" class="space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-4 sm:p-5 text-white flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold flex items-center gap-2">
+              <i class="fa-solid fa-truck text-amber-400"></i>
+              వాహనం లోడింగ్ & ఫీడ్‌బ్యాక్ పేపర్ సృష్టి (New Dispatch Entry)
+            </h2>
+            <p class="text-xs text-slate-300 mt-0.5">ఇన్‌వాయిస్ మరియు వాహనం వివరాలు నమోదు చేసి నేరుగా ప్రింట్ పేపర్ తీయండి</p>
+          </div>
+          
+          <div class="bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700 flex items-center gap-3">
+            <span class="text-xs text-slate-400 uppercase font-semibold">Auto Unique SL No:</span>
+            <span id="currentGeneratedSl" class="font-mono text-base sm:text-lg font-bold text-amber-400 tracking-wider">TI-2026-1001</span>
+          </div>
+        </div>
+
+        <form id="dispatchForm" onsubmit="event.preventDefault(); handleSaveAndPrint();" class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Unique SL Number Display -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Unique Feedback SL No</label>
+              <div class="relative">
+                <input type="text" id="dispatchSlNo" readonly 
+                       class="w-full bg-amber-50/70 border-2 border-amber-300 font-mono font-bold text-blue-900 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none">
+                <i class="fa-solid fa-hashtag absolute right-3.5 top-3.5 text-amber-500"></i>
+              </div>
+              <span class="text-[11px] text-slate-500 mt-1 block">ఈ యూనిక్ నంబర్ ప్రింట్ పేపర్‌పై ఆటోమేటిక్‌గా వస్తుంది.</span>
+            </div>
+
+            <!-- Invoice No -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Invoice No * (ఇన్‌వాయిస్ సంఖ్య)</label>
+              <input type="text" id="dispatchInvoice" required placeholder="e.g. INV-9042" 
+                     class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-xl px-3.5 py-2.5 focus:bg-white focus:border-blue-600 focus:outline-none">
+            </div>
+
+            <!-- Date -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Dispatch Date * (తేదీ)</label>
+              <input type="date" id="dispatchDate" required 
+                     class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-xl px-3.5 py-2.5 focus:bg-white focus:border-blue-600 focus:outline-none">
+            </div>
+
+            <!-- Party Name -->
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Party / Customer Name * (పార్టీ పేరు)</label>
+              <input type="text" id="dispatchParty" required placeholder="e.g. Sri Balaji Hardware & Traders, Guntur" 
+                     class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-xl px-3.5 py-2.5 focus:bg-white focus:border-blue-600 focus:outline-none">
+            </div>
+
+            <!-- Vehicle No -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Vehicle No * (వాహనం సంఖ్య)</label>
+              <input type="text" id="dispatchVehicle" required placeholder="e.g. AP 07 TA 5544" 
+                     class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm uppercase rounded-xl px-3.5 py-2.5 focus:bg-white focus:border-blue-600 focus:outline-none">
+            </div>
+
+            <!-- Driver Name -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Driver Name (డ్రైవర్ పేరు)</label>
+              <input type="text" id="dispatchDriverName" placeholder="e.g. Ramesh Kumar" 
+                     class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-xl px-3.5 py-2.5 focus:bg-white focus:border-blue-600 focus:outline-none">
+            </div>
+
+            <!-- Driver Mobile Number -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Driver Mobile No (మొబైల్ సంఖ్య)</label>
+              <input type="text" id="dispatchDriverPhone" maxlength="10" placeholder="e.g. 9876543210" 
+                     class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-xl px-3.5 py-2.5 focus:bg-white focus:border-blue-600 focus:outline-none">
+            </div>
+
+            <!-- Remarks / Notes -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Dispatch Remarks (లోడింగ్ గమనికలు)</label>
+              <input type="text" id="dispatchNotes" placeholder="Optional notes (e.g. Special care)" 
+                     class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-xl px-3.5 py-2.5 focus:bg-white focus:border-blue-600 focus:outline-none">
+            </div>
+          </div>
+
+          <div class="mt-8 pt-5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-4">
+            <div class="text-xs text-slate-500">
+              <i class="fa-solid fa-circle-info text-blue-600 mr-1"></i>
+              'Save & Print' నొక్కగానే రికార్డు భద్రపరచబడి, ఇన్‌వాయిస్‌తో పంపించే ప్రింట్ పేపర్ రెడీ అవుతుంది.
+            </div>
+            
+            <div class="flex gap-3">
+              <button type="button" onclick="regenerateSlNo()" class="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>కొత్త SL No రీసెట్</span>
+              </button>
+              
+              <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 text-xs sm:text-sm">
+                <i class="fa-solid fa-print"></i>
+                <span>Save & Print Feedback Slip</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ---------------- TAB 2: CLOSE PAPER FEEDBACK ---------------- -->
+    <section id="tabFeedback" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-emerald-800 to-teal-900 p-4 sm:p-5 text-white">
+          <h2 class="text-lg font-bold flex items-center gap-2">
+            <i class="fa-solid fa-file-signature text-emerald-300"></i>
+            పేపర్ ఫీడ్‌బ్యాక్ రికార్డు పూర్తి చేయడం (Close Returned Paper Feedback)
+          </h2>
+          <p class="text-xs text-emerald-200 mt-0.5">డ్రైవర్ తీసుకొచ్చిన పేపర్‌పై ఉన్న Unique SL No నమోదు చేసి కస్టమర్ ఫీడ్‌బ్యాక్‌ను సిస్టమ్‌లో భద్రపరచండి</p>
+        </div>
+
+        <div class="p-6">
+          <!-- Search box by Unique SL No -->
+          <div class="bg-slate-50 border-2 border-dashed border-slate-300 p-4 rounded-xl mb-6">
+            <label class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">
+              Enter Unique Feedback SL No from Paper (పేపర్‌పై ఉన్న SL నంబర్ టైప్ చేయండి)
+            </label>
+            <div class="flex flex-wrap sm:flex-nowrap gap-3">
+              <div class="relative flex-grow">
+                <input type="text" id="searchSlInput" placeholder="e.g. TI-2026-1001 or INV No" 
+                       class="w-full bg-white border border-slate-300 font-mono text-base font-bold text-slate-800 uppercase px-4 py-2.5 rounded-xl focus:border-emerald-600 focus:outline-none">
+                <i class="fa-solid fa-barcode absolute right-3.5 top-3.5 text-slate-400"></i>
+              </div>
+              <button onclick="searchFeedbackBySl()" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-6 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-sm">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>Fetch Details (వెతకండి)</span>
+              </button>
+            </div>
+            <p id="searchFeedbackError" class="text-xs text-red-600 font-medium mt-2 hidden">
+              <i class="fa-solid fa-circle-xmark mr-1"></i> ఈ SL No తో రికార్డు కనిపించలేదు. దయచేసి నంబర్ సరిచూడండి!
+            </p>
+          </div>
+
+          <!-- Found Record Details & Feedback Input Form -->
+          <div id="feedbackEntryCard" class="hidden border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <div class="bg-slate-100 p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span class="text-xs font-bold text-slate-500 uppercase">Selected SL No:</span>
+                <span id="cardSlNo" class="font-mono text-base font-extrabold text-blue-900 ml-2">--</span>
+              </div>
+              <div>
+                <span id="cardStatusBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                  Pending Feedback
+                </span>
+              </div>
+            </div>
+
+            <!-- Auto Populated Meta info -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-white border-b border-slate-100 text-xs">
+              <div>
+                <span class="text-slate-400 block font-semibold">Party Name:</span>
+                <span id="cardParty" class="font-bold text-slate-800 text-sm">--</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block font-semibold">Invoice No:</span>
+                <span id="cardInvoice" class="font-bold text-slate-800 text-sm">--</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block font-semibold">Vehicle No:</span>
+                <span id="cardVehicle" class="font-bold text-slate-800 text-sm uppercase">--</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block font-semibold">Driver Details:</span>
+                <span id="cardDriver" class="font-bold text-slate-800 text-sm">--</span>
+              </div>
+            </div>
+
+            <!-- Feedback Values Input (Matching the paper slip) -->
+            <form id="officeFeedbackForm" onsubmit="event.preventDefault(); submitPaperFeedback();" class="p-5 space-y-5 bg-slate-50/50">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- 1. Driver & Vehicle -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                  <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-2 flex items-center justify-between">
+                    <span>1. DRIVER & VEHICLE</span>
+                    <i class="fa-solid fa-user-check text-blue-600"></i>
+                  </h4>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Driver Behaviour (డ్రైవర్ ప్రవర్తన):</label>
+                    <div class="flex gap-4">
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbDriver" value="Good" checked class="text-blue-600 focus:ring-0"> Good
+                      </label>
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbDriver" value="Not Good" class="text-blue-600 focus:ring-0"> Not Good
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Vehicle Problem (వాహన సమస్య):</label>
+                    <div class="flex gap-4">
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbVehicleProb" value="No" checked class="text-blue-600 focus:ring-0"> No
+                      </label>
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbVehicleProb" value="Yes" class="text-blue-600 focus:ring-0"> Yes
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. Stock Condition -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                  <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-2 flex items-center justify-between">
+                    <span>2. STOCK STATUS</span>
+                    <i class="fa-solid fa-boxes-stacked text-amber-600"></i>
+                  </h4>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Stock Received Correctly (స్టాక్ సరిగా చేరిందా?):</label>
+                    <div class="flex gap-4">
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbStockCorrect" value="Yes" checked class="text-blue-600 focus:ring-0"> Yes
+                      </label>
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbStockCorrect" value="No" class="text-blue-600 focus:ring-0"> No
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Shortage (కొరత ఏమైనా ఉందా?):</label>
+                    <div class="flex gap-4">
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbShortage" value="No" checked class="text-blue-600 focus:ring-0"> No
+                      </label>
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbShortage" value="Yes" class="text-blue-600 focus:ring-0"> Yes
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3. Damage -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                  <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-2 flex items-center justify-between">
+                    <span>3. DAMAGE STATUS</span>
+                    <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
+                  </h4>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Stock Damage (నష్టం జరిగిందా?):</label>
+                    <div class="flex gap-4">
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbDamage" value="No" checked class="text-blue-600 focus:ring-0"> No
+                      </label>
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbDamage" value="Yes" class="text-blue-600 focus:ring-0"> Yes
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Damage Details (పేపర్‌లో రాసిన వివరాలు):</label>
+                    <input type="text" id="fbDamageDetails" placeholder="Details if damaged..." 
+                           class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 focus:bg-white focus:outline-none">
+                  </div>
+                </div>
+
+                <!-- 4. Overall Feedback & Remark -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                  <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-2 flex items-center justify-between">
+                    <span>4. OVERALL FEEDBACK</span>
+                    <i class="fa-solid fa-star text-yellow-500"></i>
+                  </h4>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Customer Satisfaction:</label>
+                    <div class="flex gap-4">
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbOverall" value="Satisfied" checked class="text-blue-600 focus:ring-0"> Satisfied
+                      </label>
+                      <label class="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input type="radio" name="fbOverall" value="Not Satisfied" class="text-blue-600 focus:ring-0"> Not Satisfied
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Party Remark & Signature Status:</label>
+                    <input type="text" id="fbPartyRemark" placeholder="e.g. Received in good order / Signed" 
+                           class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 focus:bg-white focus:outline-none">
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-3 flex justify-end gap-3">
+                <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-6 py-2.5 rounded-xl shadow transition-all flex items-center gap-2 text-sm">
+                  <i class="fa-solid fa-check-double"></i>
+                  <span>Complete & Archive Record</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- TAB 3: RECORDS HISTORY & SEARCH ---------------- -->
+    <section id="tabHistory" class="hidden space-y-5">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-database text-blue-700"></i>
+              డెలివరీ రికార్డుల చరిత్ర (All Dispatch & Feedback Records)
+            </h2>
+            <p class="text-xs text-slate-500">పూర్తయిన మరియు పెండింగ్‌లో ఉన్న డెలివరీల పూర్తి జాబితా</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <input type="text" id="tableFilterInput" onkeyup="renderRecordsTable()" placeholder="Search Party, SL, Inv..." 
+                   class="bg-slate-50 border border-slate-300 text-xs rounded-xl px-3 py-2 w-48 sm:w-64 focus:outline-none focus:bg-white">
+            <button onclick="exportToCsv()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-file-csv"></i>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+          <table class="w-full text-left text-xs text-slate-700">
+            <thead class="bg-slate-100 text-slate-600 uppercase font-bold border-b border-slate-200 text-[11px]">
+              <tr>
+                <th class="p-3">SL No</th>
+                <th class="p-3">Date</th>
+                <th class="p-3">Invoice No</th>
+                <th class="p-3">Party Name</th>
+                <th class="p-3">Vehicle</th>
+                <th class="p-3">Driver Info</th>
+                <th class="p-3">Feedback Status</th>
+                <th class="p-3">Overall</th>
+                <th class="p-3 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="recordsTableBody" class="divide-y divide-slate-200">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== 3. PRINTABLE FEEDBACK SLIP (REPLICA) ==================== -->
+  <!-- This section exactly replicates the user's paper feedback form and will be visible only when printed -->
+  <div id="printAreaContainer" class="hidden">
+    <div style="border: 2.5px solid #111; border-radius: 12px; padding: 22px; max-width: 780px; margin: 0 auto; background: #fff; font-family: 'Segoe UI', Arial, sans-serif; color: #000;">
+      
+      <!-- Top Slip Header with Unique SL Badge -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+        <div style="flex-grow: 1; text-align: center; margin-left: 80px;">
+          <h1 style="font-size: 26px; font-weight: 900; letter-spacing: 1.5px; margin: 0; color: #111;">TULASI INDUSTRIES</h1>
+          <h2 style="font-size: 15px; font-weight: 700; letter-spacing: 1.8px; margin: 4px 0 0 0; color: #222;">STOCK DELIVERY FEEDBACK</h2>
+        </div>
+        
+        <!-- PROMINENT UNIQUE SL NO BADGE -->
+        <div style="border: 2px solid #000; padding: 6px 12px; text-align: center; border-radius: 6px; background: #fafafa;">
+          <div style="font-size: 9px; font-weight: bold; text-transform: uppercase;">FEEDBACK SL NO:</div>
+          <div id="printSlipSlNo" style="font-size: 16px; font-weight: 900; font-family: monospace; letter-spacing: 1px;">TI-2026-1001</div>
+        </div>
+      </div>
+
+      <!-- Main Meta Details (Party, Date, Invoice, Vehicle, Driver) -->
+      <div style="margin-top: 15px; font-size: 14px; line-height: 1.8;">
+        <div style="display: flex; align-items: baseline; margin-bottom: 6px;">
+          <strong style="white-space: nowrap;">Party Name:</strong>
+          <span id="printSlipParty" style="padding-left: 8px; font-weight: 600;">--</span>
+          <div class="dotted-line"></div>
+        </div>
+
+        <div style="display: flex; gap: 20px; margin-bottom: 6px;">
+          <div style="display: flex; align-items: baseline; flex: 1;">
+            <strong style="white-space: nowrap;">Date:</strong>
+            <span id="printSlipDate" style="padding-left: 8px; font-weight: 600;">--</span>
+            <div class="dotted-line"></div>
+          </div>
+          <div style="display: flex; align-items: baseline; flex: 1.5;">
+            <strong style="white-space: nowrap;">Invoice No.:</strong>
+            <span id="printSlipInvoice" style="padding-left: 8px; font-weight: 600;">--</span>
+            <div class="dotted-line"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 20px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: baseline; flex: 1;">
+            <strong style="white-space: nowrap;">Vehicle No.:</strong>
+            <span id="printSlipVehicle" style="padding-left: 8px; font-weight: 600; text-transform: uppercase;">--</span>
+            <div class="dotted-line"></div>
+          </div>
+          <div style="display: flex; align-items: baseline; flex: 1.5;">
+            <strong style="white-space: nowrap;">Driver:</strong>
+            <span id="printSlipDriver" style="padding-left: 8px; font-weight: 600;">--</span>
+            <div class="dotted-line"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. DRIVER & VEHICLE SECTION -->
+      <div style="margin-top: 12px; font-size: 13.5px;">
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px;">1. DRIVER & VEHICLE</div>
+        
+        <div style="margin-left: 15px; margin-bottom: 5px; display: flex; align-items: center;">
+          <span style="font-weight: 600; width: 150px;">Driver Behaviour:</span>
+          <span class="print-box-check"></span> Good &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="print-box-check"></span> Not Good
+        </div>
+
+        <div style="margin-left: 15px; display: flex; align-items: center;">
+          <span style="font-weight: 600; width: 150px;">Vehicle Problem:</span>
+          <span class="print-box-check"></span> No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="print-box-check"></span> Yes
+        </div>
+      </div>
+
+      <!-- 2. STOCK SECTION -->
+      <div style="margin-top: 14px; font-size: 13.5px;">
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px;">2. STOCK</div>
+        
+        <div style="margin-left: 15px; margin-bottom: 5px; display: flex; align-items: center;">
+          <span style="font-weight: 600; width: 180px;">Stock Received Correctly:</span>
+          <span class="print-box-check"></span> Yes &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="print-box-check"></span> No
+        </div>
+
+        <div style="margin-left: 15px; display: flex; align-items: center;">
+          <span style="font-weight: 600; width: 180px;">Shortage:</span>
+          <span class="print-box-check"></span> No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="print-box-check"></span> Yes
+        </div>
+      </div>
+
+      <!-- 3. DAMAGE SECTION -->
+      <div style="margin-top: 14px; font-size: 13.5px;">
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px;">3. DAMAGE</div>
+        
+        <div style="margin-left: 15px; margin-bottom: 6px; display: flex; align-items: center;">
+          <span style="font-weight: 600; width: 150px;">Stock Damage:</span>
+          <span class="print-box-check"></span> No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="print-box-check"></span> Yes
+        </div>
+
+        <div style="margin-left: 15px; display: flex; align-items: baseline;">
+          <span style="font-weight: 600; white-space: nowrap;">Damage Details:</span>
+          <div class="dotted-line"></div>
+        </div>
+      </div>
+
+      <!-- 4. OVERALL FEEDBACK -->
+      <div style="margin-top: 14px; font-size: 13.5px;">
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px;">4. OVERALL FEEDBACK</div>
+        
+        <div style="margin-left: 15px; margin-bottom: 8px; display: flex; align-items: center;">
+          <span class="print-box-check"></span> Satisfied &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="print-box-check"></span> Not Satisfied
+        </div>
+
+        <div style="margin-left: 15px; display: flex; align-items: baseline; margin-bottom: 12px;">
+          <span style="font-weight: 600; white-space: nowrap;">Party Remark:</span>
+          <div class="dotted-line"></div>
+        </div>
+        <div style="margin-left: 15px; height: 16px; border-bottom: 1.5px dotted #555; margin-bottom: 18px;"></div>
+      </div>
+
+      <!-- BOTTOM SIGNATURE & THANK YOU -->
+      <div style="margin-top: 25px; padding-top: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div style="display: flex; align-items: baseline; width: 60%;">
+          <strong style="white-space: nowrap; font-size: 14px;">Party Signature:</strong>
+          <div class="dotted-line"></div>
+        </div>
+
+        <div style="font-style: italic; font-weight: 700; font-size: 17px; color: #222; font-family: serif;">
+          Thank You
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <div id="toastBox" class="bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-2">
+      <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span id="toastMsg">Operation successful!</span>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-400 no-print">
+    Tulasi Industries &bull; Stock Delivery & Office Paper Feedback System &bull; Single-File Enterprise Architecture
+  </footer>
+
+  <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+  <script>
+    // System Configurations
+    const SECURITY_PIN = "123456"; // Configure your desired 6-digit staff PIN
+    const STORAGE_KEY = "tulasi_industries_feedback_v1";
+
+    let activeRecords = {};
+    let currentSlNumber = "";
+
+    // Load initial storage and initialize date
+    window.addEventListener("DOMContentLoaded", () => {
+      loadRecordsFromStorage();
+      document.getElementById("dispatchDate").valueAsDate = new Date();
+      generateNewSlNumber();
+    });
+
+    // 1. PIN Login Management
+    function handlePinLogin() {
+      const pinInput = document.getElementById("inputPin");
+      const errorMsg = document.getElementById("loginError");
+
+      if (pinInput.value.trim() === SECURITY_PIN) {
+        document.getElementById("pinScreen").classList.add("hidden");
+        errorMsg.classList.add("hidden");
+        pinInput.value = "";
+        showToast("సిస్టమ్ లాగిన్ విజయవంతమైంది!", "success");
+      } else {
+        errorMsg.classList.remove("hidden");
+        pinInput.classList.add("border-red-500");
+        setTimeout(() => pinInput.classList.remove("border-red-500"), 1000);
+      }
+    }
+
+    function lockSystem() {
+      document.getElementById("pinScreen").classList.remove("hidden");
+      document.getElementById("inputPin").value = "";
+      document.getElementById("loginError").classList.add("hidden");
+      showToast("సిస్టమ్ లాక్ చేయబడింది.", "info");
+    }
+
+    // 2. Navigation Tab Switching
+    function switchTab(tabId) {
+      const tabs = ['tabDispatch', 'tabFeedback', 'tabHistory'];
+      const btns = ['tabBtnDispatch', 'tabBtnFeedback', 'tabBtnHistory'];
+
+      tabs.forEach((id, idx) => {
+        const el = document.getElementById(id);
+        const btn = document.getElementById(btns[idx]);
+        if (id === tabId) {
+          el.classList.remove("hidden");
+          btn.classList.add("border-blue-700", "text-blue-700");
+          btn.classList.remove("border-transparent", "text-slate-500");
+        } else {
+          el.classList.add("hidden");
+          btn.classList.remove("border-blue-700", "text-blue-700");
+          btn.classList.add("border-transparent", "text-slate-500");
+        }
+      });
+
+      if (tabId === 'tabHistory') {
+        renderRecordsTable();
+      }
+    }
+
+    // 3. Unique SL Number Generator
+    function generateNewSlNumber() {
+      const year = new Date().getFullYear();
+      const existingKeys = Object.keys(activeRecords);
+      // Auto sequential calculation or random seed
+      let nextSeq = 1001 + existingKeys.length;
+      let newSl = `TI-${year}-${nextSeq}`;
+
+      while (activeRecords[newSl]) {
+        nextSeq++;
+        newSl = `TI-${year}-${nextSeq}`;
+      }
+
+      currentSlNumber = newSl;
+      document.getElementById("dispatchSlNo").value = newSl;
+      document.getElementById("currentGeneratedSl").innerText = newSl;
+    }
+
+    function regenerateSlNo() {
+      generateNewSlNumber();
+      showToast("కొత్త SL No కేటాయించబడింది: " + currentSlNumber, "info");
+    }
+
+    // 4. Save Dispatch & Trigger Print Slip
+    function handleSaveAndPrint() {
+      const slNo = document.getElementById("dispatchSlNo").value.trim();
+      const invoice = document.getElementById("dispatchInvoice").value.trim();
+      const party = document.getElementById("dispatchParty").value.trim();
+      const date = document.getElementById("dispatchDate").value;
+      const vehicle = document.getElementById("dispatchVehicle").value.trim();
+      const driver = document.getElementById("dispatchDriverName").value.trim() || "N/A";
+      const phone = document.getElementById("dispatchDriverPhone").value.trim() || "N/A";
+      const notes = document.getElementById("dispatchNotes").value.trim() || "";
+
+      if (!invoice || !party || !vehicle) {
+        alert("దయచేసి Invoice No, Party Name మరియు Vehicle No తప్పనిసరిగా నమోదు చేయండి.");
+        return;
+      }
+
+      // Store in memory & localStorage
+      const newRecord = {
+        slNo: slNo,
+        invoice: invoice,
+        party: party,
+        date: date,
+        vehicle: vehicle,
+        driver: driver,
+        phone: phone,
+        notes: notes,
+        status: "Pending Feedback",
+        createdTime: new Date().toISOString(),
+        feedback: null
+      };
+
+      activeRecords[slNo] = newRecord;
+      saveRecordsToStorage();
+
+      // Populate Printable Paper Slip HTML
+      document.getElementById("printSlipSlNo").innerText = slNo;
+      document.getElementById("printSlipParty").innerText = party;
+      document.getElementById("printSlipDate").innerText = date;
+      document.getElementById("printSlipInvoice").innerText = invoice;
+      document.getElementById("printSlipVehicle").innerText = vehicle;
+      document.getElementById("printSlipDriver").innerText = `${driver} (Ph: ${phone})`;
+
+      // Prepare UI for printing
+      const printContainer = document.getElementById("printAreaContainer");
+      printContainer.classList.remove("hidden");
+
+      // Small delay before invoking native browser print
+      setTimeout(() => {
+        window.print();
+        printContainer.classList.add("hidden");
+
+        // Reset form and prepare next SL number
+        document.getElementById("dispatchInvoice").value = "";
+        document.getElementById("dispatchParty").value = "";
+        document.getElementById("dispatchVehicle").value = "";
+        document.getElementById("dispatchDriverName").value = "";
+        document.getElementById("dispatchDriverPhone").value = "";
+        document.getElementById("dispatchNotes").value = "";
+        generateNewSlNumber();
+
+        showToast("డెలివరీ పేపర్ ప్రింట్ చేయబడింది & సేవ్ అయింది!", "success");
+      }, 250);
+    }
+
+    // 5. Search Dispatch by SL No in Tab 2
+    function searchFeedbackBySl() {
+      const searchVal = document.getElementById("searchSlInput").value.trim().toUpperCase();
+      const errorMsg = document.getElementById("searchFeedbackError");
+      const card = document.getElementById("feedbackEntryCard");
+
+      if (!searchVal) {
+        errorMsg.innerText = "దయచేసి SL No లేదా Invoice No టైప్ చేయండి.";
+        errorMsg.classList.remove("hidden");
+        card.classList.add("hidden");
+        return;
+      }
+
+      // Exact match or partial match on invoice/SL
+      let foundKey = Object.keys(activeRecords).find(k => k.toUpperCase() === searchVal);
+      if (!foundKey) {
+        foundKey = Object.keys(activeRecords).find(k => activeRecords[k].invoice.toUpperCase() === searchVal);
+      }
+
+      if (!foundKey) {
+        errorMsg.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> "${searchVal}" తో రికార్డు కనపడలేదు!`;
+        errorMsg.classList.remove("hidden");
+        card.classList.add("hidden");
+        return;
+      }
+
+      errorMsg.classList.add("hidden");
+      const record = activeRecords[foundKey];
+
+      // Populate Card Details
+      document.getElementById("cardSlNo").innerText = record.slNo;
+      document.getElementById("cardParty").innerText = record.party;
+      document.getElementById("cardInvoice").innerText = record.invoice;
+      document.getElementById("cardVehicle").innerText = record.vehicle;
+      document.getElementById("cardDriver").innerText = `${record.driver} (${record.phone})`;
+
+      const statusBadge = document.getElementById("cardStatusBadge");
+      if (record.status === "Completed") {
+        statusBadge.innerText = "Completed (పూర్తయింది)";
+        statusBadge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300";
+      } else {
+        statusBadge.innerText = "Pending Feedback (పెండింగ్)";
+        statusBadge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300";
+      }
+
+      // If feedback exists, prefill it
+      if (record.feedback) {
+        setRadioVal("fbDriver", record.feedback.driverBehaviour);
+        setRadioVal("fbVehicleProb", record.feedback.vehicleProblem);
+        setRadioVal("fbStockCorrect", record.feedback.stockCorrect);
+        setRadioVal("fbShortage", record.feedback.shortage);
+        setRadioVal("fbDamage", record.feedback.damage);
+        document.getElementById("fbDamageDetails").value = record.feedback.damageDetails || "";
+        setRadioVal("fbOverall", record.feedback.overallStatus);
+        document.getElementById("fbPartyRemark").value = record.feedback.partyRemark || "";
+      } else {
+        // Defaults
+        setRadioVal("fbDriver", "Good");
+        setRadioVal("fbVehicleProb", "No");
+        setRadioVal("fbStockCorrect", "Yes");
+        setRadioVal("fbShortage", "No");
+        setRadioVal("fbDamage", "No");
+        document.getElementById("fbDamageDetails").value = "";
+        setRadioVal("fbOverall", "Satisfied");
+        document.getElementById("fbPartyRemark").value = "";
+      }
+
+      card.classList.remove("hidden");
+    }
+
+    // 6. Submit Office Feedback from Returned Paper
+    function submitPaperFeedback() {
+      const slNo = document.getElementById("cardSlNo").innerText.trim();
+      if (!activeRecords[slNo]) return;
+
+      const feedbackData = {
+        driverBehaviour: getRadioVal("fbDriver"),
+        vehicleProblem: getRadioVal("fbVehicleProb"),
+        stockCorrect: getRadioVal("fbStockCorrect"),
+        shortage: getRadioVal("fbShortage"),
+        damage: getRadioVal("fbDamage"),
+        damageDetails: document.getElementById("fbDamageDetails").value.trim(),
+        overallStatus: getRadioVal("fbOverall"),
+        partyRemark: document.getElementById("fbPartyRemark").value.trim(),
+        completedAt: new Date().toISOString()
+      };
+
+      activeRecords[slNo].feedback = feedbackData;
+      activeRecords[slNo].status = "Completed";
+      saveRecordsToStorage();
+
+      showToast(`SL No ${slNo} ఫీడ్‌బ్యాక్ వివరాలు అప్‌డేట్ చేయబడ్డాయి!`, "success");
+      searchFeedbackBySl(); // Refresh view
+    }
+
+    // Helper functions for radio buttons
+    function getRadioVal(name) {
+      const el = document.querySelector(`input[name="${name}"]:checked`);
+      return el ? el.value : "";
+    }
+    function setRadioVal(name, value) {
+      const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (el) el.checked = true;
+    }
+
+    // 7. Render History Records Table
+    function renderRecordsTable() {
+      const tbody = document.getElementById("recordsTableBody");
+      const filter = document.getElementById("tableFilterInput").value.trim().toLowerCase();
+      tbody.innerHTML = "";
+
+      const keys = Object.keys(activeRecords).reverse(); // latest first
+
+      const filteredKeys = keys.filter(k => {
+        const r = activeRecords[k];
+        return r.slNo.toLowerCase().includes(filter) ||
+               r.party.toLowerCase().includes(filter) ||
+               r.invoice.toLowerCase().includes(filter) ||
+               r.vehicle.toLowerCase().includes(filter) ||
+               (r.driver && r.driver.toLowerCase().includes(filter));
+      });
+
+      if (filteredKeys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-400">ఎటువంటి రికార్డులు కనుగొనబడలేదు.</td></tr>`;
+        return;
+      }
+
+      filteredKeys.forEach(k => {
+        const r = activeRecords[k];
+        const isDone = r.status === "Completed";
+        const fb = r.feedback;
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition-colors";
+        tr.innerHTML = `
+          <td class="p-3 font-mono font-bold text-blue-900">${r.slNo}</td>
+          <td class="p-3 text-slate-600">${r.date}</td>
+          <td class="p-3 font-semibold text-slate-800">${r.invoice}</td>
+          <td class="p-3 font-medium text-slate-900 max-w-[180px] truncate" title="${r.party}">${r.party}</td>
+          <td class="p-3 uppercase text-slate-700 font-mono">${r.vehicle}</td>
+          <td class="p-3 text-slate-600">${r.driver || 'N/A'}</td>
+          <td class="p-3">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isDone ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}">
+              ${r.status}
+            </span>
+          </td>
+          <td class="p-3 font-semibold">
+            ${fb ? `<span class="${fb.overallStatus === 'Satisfied' ? 'text-emerald-700' : 'text-rose-600'}">${fb.overallStatus}</span>` : '<span class="text-slate-400">--</span>'}
+          </td>
+          <td class="p-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="reprintSlip('${r.slNo}')" title="Reprint Paper Slip" class="p-1.5 text-slate-600 hover:text-blue-700 rounded-md hover:bg-blue-50">
+                <i class="fa-solid fa-print"></i>
+              </button>
+              <button onclick="editFeedbackDirectly('${r.slNo}')" title="Enter / View Feedback" class="p-1.5 text-slate-600 hover:text-emerald-700 rounded-md hover:bg-emerald-50">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function reprintSlip(slNo) {
+      const r = activeRecords[slNo];
+      if (!r) return;
+
+      document.getElementById("printSlipSlNo").innerText = r.slNo;
+      document.getElementById("printSlipParty").innerText = r.party;
+      document.getElementById("printSlipDate").innerText = r.date;
+      document.getElementById("printSlipInvoice").innerText = r.invoice;
+      document.getElementById("printSlipVehicle").innerText = r.vehicle;
+      document.getElementById("printSlipDriver").innerText = `${r.driver} (Ph: ${r.phone})`;
+
+      const printContainer = document.getElementById("printAreaContainer");
+      printContainer.classList.remove("hidden");
+      setTimeout(() => {
+        window.print();
+        printContainer.classList.add("hidden");
+      }, 200);
+    }
+
+    function editFeedbackDirectly(slNo) {
+      switchTab('tabFeedback');
+      document.getElementById("searchSlInput").value = slNo;
+      searchFeedbackBySl();
+    }
+
+    // 8. Export CSV
+    function exportToCsv() {
+      const keys = Object.keys(activeRecords);
+      if (keys.length === 0) {
+        alert("ఎగుమతి చేయడానికి రికార్డులు ఏవీ లేవు!");
+        return;
+      }
+
+      let csv = "SL No,Date,Invoice No,Party Name,Vehicle No,Driver Name,Driver Phone,Status,Driver Behaviour,Vehicle Problem,Stock Correct,Shortage,Damage,Overall Satisfaction,Party Remark\n";
+
+      keys.forEach(k => {
+        const r = activeRecords[k];
+        const fb = r.feedback || {};
+        const row = [
+          `"${r.slNo}"`,
+          `"${r.date}"`,
+          `"${r.invoice}"`,
+          `"${(r.party || '').replace(/"/g, '""')}"`,
+          `"${r.vehicle}"`,
+          `"${r.driver || ''}"`,
+          `"${r.phone || ''}"`,
+          `"${r.status}"`,
+          `"${fb.driverBehaviour || ''}"`,
+          `"${fb.vehicleProblem || ''}"`,
+          `"${fb.stockCorrect || ''}"`,
+          `"${fb.shortage || ''}"`,
+          `"${fb.damage || ''}"`,
+          `"${fb.overallStatus || ''}"`,
+          `"${(fb.partyRemark || '').replace(/"/g, '""')}"`
+        ];
+        csv += row.join(",") + "\n";
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Tulasi_Industries_Feedback_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("CSV ఫైల్ డౌన్‌లోడ్ ప్రారంభమైంది!", "info");
+    }
+
+    // 9. Storage & Toast Helpers
+    function saveRecordsToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(activeRecords));
+    }
+
+    function loadRecordsFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) activeRecords = JSON.parse(raw);
+      } catch (err) {
+        console.error("Storage error:", err);
+        activeRecords = {};
+      }
+    }
+
+    function showToast(message, type = "success") {
+      const toast = document.getElementById("toast");
+      const toastMsg = document.getElementById("toastMsg");
+      const toastIcon = document.getElementById("toastIcon");
+
+      toastMsg.innerText = message;
+      if (type === "success") {
+        toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+      } else if (type === "info") {
+        toastIcon.className = "fa-solid fa-circle-info text-blue-400";
+      } else {
+        toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400";
+      }
+
+      toast.classList.remove("translate-y-24", "opacity-0", "pointer-events-none");
+      setTimeout(() => {
+        toast.classList.add("translate-y-24", "opacity-0", "pointer-events-none");
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
+```
